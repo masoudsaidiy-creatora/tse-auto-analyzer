@@ -12,7 +12,6 @@ SYMBOLS = [
 ]
 
 def get_price(insCode):
-    """دریافت قیمت لحظه‌ای از TSE"""
     url = f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/{insCode}"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
@@ -20,13 +19,18 @@ def get_price(insCode):
     }
     try:
         r = requests.get(url, headers=headers, timeout=15)
-        print(f"   Status: {r.status_code}")
         if r.status_code == 200:
             data = r.json()
             info = data.get('closingPriceInfo', {})
+            # چاپ همه‌ی فیلدهای قیمتی برای دیباگ
+            print(f"   pDrCotVal: {info.get('pDrCotVal')}")
+            print(f"   pClosing: {info.get('pClosing')}")
+            print(f"   py (دیروز): {info.get('py')}")
+            print(f"   last: {info.get('last')}")
+            # برگرداندن pDrCotVal (آخرین قیمت معامله)
             price = info.get('pDrCotVal') or info.get('pClosing') or info.get('py')
             if price:
-                return int(price) // 10
+                return int(price)  # ریال
     except Exception as e:
         print(f"   Error: {e}")
     return None
@@ -38,7 +42,7 @@ def main():
         print(f"\n📊 {s['sym']} ({s['insCode']})")
         price = get_price(s['insCode'])
         if price:
-            print(f"   ✅ قیمت: {price:,} تومان")
+            print(f"   💰 قیمت: {price:,} ریال = {price//10:,} تومان")
         else:
             print(f"   ❌ دریافت نشد")
         time.sleep(2)
