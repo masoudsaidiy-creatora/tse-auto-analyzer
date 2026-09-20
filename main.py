@@ -1,8 +1,6 @@
-
 import requests
-import re
-from datetime import datetime
 import time
+from datetime import datetime
 
 SYMBOLS = [
     {'sym': 'شستا', 'insCode': '46348559193224090'},
@@ -13,37 +11,24 @@ SYMBOLS = [
     {'sym': 'فزر', 'insCode': '35366681030756042'},
 ]
 
-def get_price_jina(insCode):
-    """استفاده از r.jina.ai به عنوان پروکسی (رایگان)"""
-    target = f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/{insCode}"
-    url = f"https://r.jina.ai/{target}"
-    try:
-        r = requests.get(url, timeout=20)
-        if r.status_code == 200:
-            text = r.text
-            m = re.search(r'"pDrCotVal":(\d+)', text)
-            if m:
-                return int(m.group(1)) // 10
-            m = re.search(r'"pClosing":(\d+)', text)
-            if m:
-                return int(m.group(1)) // 10
-    except Exception as e:
-        print(f"  Jina error: {e}")
-    return None
-
-def get_price_direct(insCode):
-    """اتصال مستقیم (ممکنه کار نکنه)"""
+def get_price(insCode):
+    """دریافت قیمت لحظه‌ای از TSE"""
     url = f"https://cdn.tsetmc.com/api/ClosingPrice/GetClosingPriceInfo/{insCode}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
+        'Accept': 'application/json',
+    }
     try:
-        r = requests.get(url, timeout=8)
+        r = requests.get(url, headers=headers, timeout=15)
+        print(f"   Status: {r.status_code}")
         if r.status_code == 200:
             data = r.json()
             info = data.get('closingPriceInfo', {})
             price = info.get('pDrCotVal') or info.get('pClosing') or info.get('py')
             if price:
                 return int(price) // 10
-    except:
-        pass
+    except Exception as e:
+        print(f"   Error: {e}")
     return None
 
 def main():
@@ -51,23 +36,12 @@ def main():
     print("=" * 60)
     for s in SYMBOLS:
         print(f"\n📊 {s['sym']} ({s['insCode']})")
-        
-        # اول مستقیم امتحان کن
-        price = get_price_direct(s['insCode'])
+        price = get_price(s['insCode'])
         if price:
-            print(f"  ✅ Direct: {price:,} تومان")
-            continue
-        
-        # اگه مستقیم نشد، با Jina امتحان کن
-        print(f"  ⏳ Direct failed, trying Jina...")
-        price = get_price_jina(s['insCode'])
-        if price:
-            print(f"  ✅ Jina: {price:,} تومان")
+            print(f"   ✅ قیمت: {price:,} تومان")
         else:
-            print(f"  ❌ هر دو روش رد شدند")
-        
-        time.sleep(1)
-    
+            print(f"   ❌ دریافت نشد")
+        time.sleep(2)
     print("\n" + "=" * 60)
     print("✅ Done")
 
