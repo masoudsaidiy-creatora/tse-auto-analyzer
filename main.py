@@ -1,5 +1,4 @@
 import requests
-import time
 from datetime import datetime
 
 def main():
@@ -9,7 +8,6 @@ def main():
     url = "https://cdn.tsetmc.com/api/ClosingPrice/GetMarketWatch?market=0&paperTypes[0]=1&withBestLimits=false&hEven=0&RefID=0"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
-        'Accept': 'application/json',
     }
     
     try:
@@ -18,9 +16,9 @@ def main():
         if r.status_code == 200:
             data = r.json()
             watch = data.get('marketwatch', [])
-            print(f"تعداد نمادها: {len(watch)}")
+            print(f"تعداد کل: {len(watch)}")
+            print("=" * 60)
             
-            # نمادهای مورد نظر (insCode)
             targets = {
                 '46348559193224090': 'شستا',
                 '7745894403636165': 'شپنا',
@@ -30,22 +28,23 @@ def main():
                 '35366681030756042': 'فزر',
             }
             
-            print("\n" + "=" * 60)
             for item in watch:
                 insCode = str(item.get('insCode', ''))
                 if insCode in targets:
                     sym = targets[insCode]
-                    pl = item.get('pl')        # آخرین قیمت
-                    pc = item.get('pc')        # قیمت پایانی
-                    pd = item.get('pDrCotVal') # قیمت آخرین معامله
-                    py = item.get('py')        # قیمت دیروز
-                    print(f"\n📊 {sym} ({insCode})")
-                    print(f"   pl (آخرین): {pl}")
-                    print(f"   pc (پایانی): {pc}")
-                    print(f"   pDrCotVal: {pd}")
-                    print(f"   py (دیروز): {py}")
-                    if pl:
-                        print(f"   💰 {int(pl):,} ریال = {int(pl)//10:,} تومان")
+                    pl = item.get('pl')       # آخرین قیمت معامله
+                    py = item.get('py')       # قیمت پایانی دیروز
+                    pf = item.get('pf')       # قیمت پایانی
+                    
+                    # انتخاب بهترین قیمت در دسترس
+                    price = pl or pf or py
+                    
+                    print(f"\n📊 {sym}")
+                    print(f"   pl={pl}, pf={pf}, py={py}")
+                    if price:
+                        print(f"   💰 {price:,} ریال = {price//10:,} تومان")
+                    else:
+                        print(f"   ⚠️ داده‌ای برای قیمت موجود نیست")
     except Exception as e:
         print(f"Error: {e}")
     
